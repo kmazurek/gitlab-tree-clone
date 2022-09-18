@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/chigopher/pathlib"
 	"github.com/zakaprov/gitlab-group-clone/app"
 	"github.com/zakaprov/gitlab-group-clone/infra"
 	"golang.org/x/sync/errgroup"
@@ -66,7 +67,7 @@ func main() {
 		GitClient:    infra.NewGitClient(*token),
 		GitlabClient: gc,
 	}
-	err = treeClone.CloneGroup(JUNI_ROOT_GROUP_ID, JUNI_ROOT_GROUP_NAME, ".")
+	err = treeClone.CloneGroup(JUNI_ROOT_GROUP_ID, JUNI_ROOT_GROUP_NAME, pathlib.NewPath("."))
 	if err != nil {
 		log.Fatal(err)
 		return
