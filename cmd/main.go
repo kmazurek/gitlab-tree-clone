@@ -2,72 +2,45 @@ package main
 
 import (
 	"context"
-	"flag"
 	"log"
-	"strconv"
-	"strings"
 
+	"github.com/alexflint/go-arg"
 	"github.com/chigopher/pathlib"
 	"github.com/zakaprov/gitlab-group-clone/app"
 	"github.com/zakaprov/gitlab-group-clone/infra"
 	"golang.org/x/sync/errgroup"
 )
 
-const JUNI_ROOT_GROUP_ID = 7330753
-const JUNI_ROOT_GROUP_NAME = "junitechnology"
-
-type Config struct {
-	CloneDir    string
-	GroupNames  map[string]bool
-	GroupIDs    map[int]bool
-	RootGroupID int
+type args struct {
+	DestinationDir string   `arg:"positional" placeholder:"DESTINATION" help:"target dir for cloning the group tree."`
+	IgnoreNames    []string `arg:"--ignore-name,separate" help:"If specified, subgroups with this name will not be cloned. May be given multiple times"`
+	IgnoreIDs      []int    `arg:"--ignore-id,separate" help:"If specified, subgroups with this ID will not be cloned. May be given multiple times"`
+	RootID         int      `arg:"-r,--root,required" placeholder:"GROUP_ID" help:"ID of the GitLab group to use as tree root"`
+	Token          string   `arg:"-t,required" help:"GitLab API access token"`
 }
 
-func NewConfig(groups string, ids string) *Config {
-	splitGroups := strings.Split(groups, ",")
-	splitIDs := strings.Split(ids, ",")
-
-	groupNames := make(map[string]bool)
-	for _, group := range splitGroups {
-		groupNames[group] = true
-	}
-
-	groupIDs := make(map[int]bool)
-	for _, id := range splitIDs {
-		intID, _ := strconv.Atoi(id)
-		groupIDs[intID] = true
-	}
-
-	return &Config{
-		GroupNames: groupNames,
-		GroupIDs:   groupIDs,
-	}
+func (args) Description() string {
+	return "Clone repositories from a GitLab group recursively."
 }
 
 func main() {
-	token := flag.String("token", "", "GitLab token to use")
-	groupNames := flag.String("group-names", "", "Groups to fetch")
-	groupIDs := flag.String("group-ids", "", "Groups to fetch")
-	flag.Parse()
-
-	config := NewConfig(*groupNames, *groupIDs)
-	println(config)
-
+	var args args
+	arg.MustParse(&args)
 	ctx := context.Background()
 	errGroup, _ := errgroup.WithContext(ctx)
 
-	gc, err := infra.NewGitlabClient(*token)
+	gc, err := infra.NewGitlabClient(args.Token)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	treeClone := app.TreeClone{
+	treeClone := app.TreeCloner{
 		ErrGroup:     errGroup,
-		GitClient:    infra.NewGitClient(*token),
+		GitClient:    infra.NewGitClient(args.Token),
 		GitlabClient: gc,
 	}
-	err = treeClone.CloneGroup(JUNI_ROOT_GROUP_ID, JUNI_ROOT_GROUP_NAME, pathlib.NewPath("."))
+	err = treeClone.CloneTree(args.RootID, pathlib.NewPath(args.DestinationDir))
 	if err != nil {
 		log.Fatal(err)
 		return
