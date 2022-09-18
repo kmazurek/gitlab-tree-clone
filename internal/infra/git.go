@@ -7,7 +7,7 @@ import (
 	"github.com/chigopher/pathlib"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/zakaprov/gitlab-group-clone/internal/domain"
+	"github.com/kmazurek/gitlab-tree-clone/internal/domain"
 )
 
 // implements domain.GitClient

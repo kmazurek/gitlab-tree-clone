@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"github.com/chigopher/pathlib"
-	"github.com/zakaprov/gitlab-group-clone/internal/infra"
-	"github.com/zakaprov/gitlab-group-clone/internal/util"
+	"github.com/kmazurek/gitlab-tree-clone/internal/infra"
+	"github.com/kmazurek/gitlab-tree-clone/internal/util"
 	"golang.org/x/sync/errgroup"
 )
 

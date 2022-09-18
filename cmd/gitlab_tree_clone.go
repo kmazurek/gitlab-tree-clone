@@ -6,7 +6,7 @@ import (
 
 	"github.com/alexflint/go-arg"
 	"github.com/chigopher/pathlib"
-	"github.com/zakaprov/gitlab-group-clone/internal/app"
+	"github.com/kmazurek/gitlab-tree-clone/internal/app"
 	"golang.org/x/sync/errgroup"
 )
 

@@ -1,8 +1,8 @@
 package infra
 
 import (
+	"github.com/kmazurek/gitlab-tree-clone/internal/domain"
 	"github.com/xanzy/go-gitlab"
-	"github.com/zakaprov/gitlab-group-clone/internal/domain"
 )
 
 // implements domain.GitlabClient
