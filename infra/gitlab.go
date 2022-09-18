@@ -2,15 +2,27 @@ package infra
 
 import "github.com/xanzy/go-gitlab"
 
-func GetGroup(client *gitlab.Client, groupId int) (*gitlab.Group, error) {
-	group, _, err := client.Groups.GetGroup(groupId, nil)
+type GitlabClient struct {
+	client *gitlab.Client
+}
+
+func NewGitlabClient(apiToken string) (*GitlabClient, error) {
+	client, err := gitlab.NewClient(apiToken)
+	if err != nil {
+		return nil, err
+	}
+	return &GitlabClient{client: client}, nil
+}
+
+func (gc *GitlabClient) GetGroup(groupId int) (*gitlab.Group, error) {
+	group, _, err := gc.client.Groups.GetGroup(groupId, nil)
 	if err != nil {
 		return nil, err
 	}
 	return group, nil
 }
 
-func ListSubgroups(client *gitlab.Client, groupId int) ([]*gitlab.Group, error) {
+func (gc *GitlabClient) ListSubgroups(groupId int) ([]*gitlab.Group, error) {
 	opt := &gitlab.ListDescendantGroupsOptions{
 		ListOptions: gitlab.ListOptions{
 			PerPage: 20,
@@ -21,7 +33,7 @@ func ListSubgroups(client *gitlab.Client, groupId int) ([]*gitlab.Group, error) 
 	var result []*gitlab.Group
 
 	for {
-		groups, resp, err := client.Groups.ListDescendantGroups(groupId, opt)
+		groups, resp, err := gc.client.Groups.ListDescendantGroups(groupId, opt)
 		if err != nil {
 			return nil, err
 		}
@@ -36,7 +48,7 @@ func ListSubgroups(client *gitlab.Client, groupId int) ([]*gitlab.Group, error) 
 	return result, nil
 }
 
-func ListProjects(client *gitlab.Client, groupId int) ([]*gitlab.Project, error) {
+func (gc *GitlabClient) ListProjects(groupId int) ([]*gitlab.Project, error) {
 	opt := &gitlab.ListGroupProjectsOptions{
 		ListOptions: gitlab.ListOptions{
 			PerPage: 20,
@@ -47,7 +59,7 @@ func ListProjects(client *gitlab.Client, groupId int) ([]*gitlab.Project, error)
 	var result []*gitlab.Project
 
 	for {
-		projects, resp, err := client.Groups.ListGroupProjects(groupId, opt)
+		projects, resp, err := gc.client.Groups.ListGroupProjects(groupId, opt)
 		if err != nil {
 			return nil, err
 		}

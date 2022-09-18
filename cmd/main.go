@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/xanzy/go-gitlab"
 	"github.com/zakaprov/gitlab-group-clone/app"
+	"github.com/zakaprov/gitlab-group-clone/infra"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -16,9 +16,10 @@ const JUNI_ROOT_GROUP_ID = 7330753
 const JUNI_ROOT_GROUP_NAME = "junitechnology"
 
 type Config struct {
+	CloneDir    string
 	GroupNames  map[string]bool
 	GroupIDs    map[int]bool
-	SeedGroupID int
+	RootGroupID int
 }
 
 func NewConfig(groups string, ids string) *Config {
@@ -51,16 +52,21 @@ func main() {
 	config := NewConfig(*groupNames, *groupIDs)
 	println(config)
 
-	gitlabClient, err := gitlab.NewClient(*token)
+	ctx := context.Background()
+	errGroup, _ := errgroup.WithContext(ctx)
+
+	gc, err := infra.NewGitlabClient(*token)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	ctx := context.Background()
-	errGroup, _ := errgroup.WithContext(ctx)
-
-	err = app.CloneGroup(gitlabClient, errGroup, JUNI_ROOT_GROUP_ID, JUNI_ROOT_GROUP_NAME, ".")
+	treeClone := app.TreeClone{
+		ErrGroup:     errGroup,
+		GitClient:    infra.NewGitClient(*token),
+		GitlabClient: gc,
+	}
+	err = treeClone.CloneGroup(JUNI_ROOT_GROUP_ID, JUNI_ROOT_GROUP_NAME, ".")
 	if err != nil {
 		log.Fatal(err)
 		return
