@@ -1,6 +1,12 @@
 package infra
 
-import "github.com/xanzy/go-gitlab"
+import (
+	"github.com/xanzy/go-gitlab"
+	"github.com/zakaprov/gitlab-group-clone/internal/domain"
+)
+
+// implements domain.GitlabClient
+var _ domain.GitlabClient = (*GitlabClient)(nil)
 
 type GitlabClient struct {
 	client *gitlab.Client

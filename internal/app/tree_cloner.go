@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/chigopher/pathlib"
-	"github.com/zakaprov/gitlab-group-clone/infra"
+	"github.com/zakaprov/gitlab-group-clone/internal/infra"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -25,6 +25,7 @@ func (tc *TreeCloner) CloneTree(groupID int, path *pathlib.Path) error {
 func (tc *TreeCloner) cloneGroup(groupID int, groupName string, path *pathlib.Path) error {
 	log.Println("Cloning group: " + groupName + " to path: " + path.String())
 	groupPath := path.Join(groupName)
+
 	err := groupPath.MkdirAll()
 	if err != nil {
 		return err
@@ -38,7 +39,7 @@ func (tc *TreeCloner) cloneGroup(groupID int, groupName string, path *pathlib.Pa
 	for _, subgroup := range subgroups {
 		subgroup := subgroup
 		tc.ErrGroup.Go(func() error {
-			return tc.cloneGroup(subgroup.ID, subgroup.Name, path)
+			return tc.cloneGroup(subgroup.ID, subgroup.Name, groupPath)
 		})
 	}
 
@@ -51,7 +52,7 @@ func (tc *TreeCloner) cloneGroup(groupID int, groupName string, path *pathlib.Pa
 		invalid := project.Archived || project.EmptyRepo
 		if !invalid {
 			tc.ErrGroup.Go(func() error {
-				return tc.GitClient.CloneProject(groupPath.Join(project.Name), project.HTTPURLToRepo)
+				return tc.GitClient.CloneRepo(project.HTTPURLToRepo, groupPath.Join(project.Name))
 			})
 		}
 	}

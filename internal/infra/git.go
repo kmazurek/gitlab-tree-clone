@@ -7,7 +7,11 @@ import (
 	"github.com/chigopher/pathlib"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/zakaprov/gitlab-group-clone/internal/domain"
 )
+
+// implements domain.GitClient
+var _ domain.GitClient = (*GitClient)(nil)
 
 type GitClient struct {
 	apiToken string
@@ -17,7 +21,7 @@ func NewGitClient(apiToken string) *GitClient {
 	return &GitClient{apiToken: apiToken}
 }
 
-func (gc *GitClient) CloneProject(path *pathlib.Path, url string) error {
+func (gc *GitClient) CloneRepo(url string, path *pathlib.Path) error {
 	log.Println("Cloning project: " + path.String())
 
 	_, err := git.PlainClone(path.String(), false, &git.CloneOptions{
