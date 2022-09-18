@@ -5,17 +5,45 @@ import (
 
 	"github.com/chigopher/pathlib"
 	"github.com/zakaprov/gitlab-group-clone/internal/infra"
+	"github.com/zakaprov/gitlab-group-clone/internal/util"
 	"golang.org/x/sync/errgroup"
 )
 
 type TreeCloner struct {
-	ErrGroup     *errgroup.Group
-	GitClient    *infra.GitClient
-	GitlabClient *infra.GitlabClient
+	errGroup     *errgroup.Group
+	gitClient    *infra.GitClient
+	gitlabClient *infra.GitlabClient
+	ignoreIDs    map[int]bool
+	ignoreNames  map[string]bool
+}
+
+func NewTreeCloner(token string, errGroup *errgroup.Group, ignoreIDs []int, ignoreNames []string) (*TreeCloner, error) {
+	gitClient := infra.NewGitClient(token)
+	gitlabClient, err := infra.NewGitlabClient(token)
+	if err != nil {
+		return nil, err
+	}
+
+	var idMap = make(map[int]bool)
+	for _, id := range ignoreIDs {
+		idMap[id] = true
+	}
+	var nameMap = make(map[string]bool)
+	for _, name := range ignoreNames {
+		nameMap[name] = true
+	}
+
+	return &TreeCloner{
+		errGroup:     errGroup,
+		gitClient:    gitClient,
+		gitlabClient: gitlabClient,
+		ignoreIDs:    idMap,
+		ignoreNames:  nameMap,
+	}, nil
 }
 
 func (tc *TreeCloner) CloneTree(groupID int, path *pathlib.Path) error {
-	group, err := tc.GitlabClient.GetGroup(groupID)
+	group, err := tc.gitlabClient.GetGroup(groupID)
 	if err != nil {
 		return err
 	}
@@ -31,19 +59,22 @@ func (tc *TreeCloner) cloneGroup(groupID int, groupName string, path *pathlib.Pa
 		return err
 	}
 
-	subgroups, err := tc.GitlabClient.ListSubgroups(groupID)
+	subgroups, err := tc.gitlabClient.ListSubgroups(groupID)
 	if err != nil {
 		return err
 	}
 
 	for _, subgroup := range subgroups {
 		subgroup := subgroup
-		tc.ErrGroup.Go(func() error {
+		tc.errGroup.Go(func() error {
+			if util.MapContains(tc.ignoreIDs, subgroup.ID) || util.MapContains(tc.ignoreNames, subgroup.Name) {
+				return nil
+			}
 			return tc.cloneGroup(subgroup.ID, subgroup.Name, groupPath)
 		})
 	}
 
-	projects, err := tc.GitlabClient.ListProjects(groupID)
+	projects, err := tc.gitlabClient.ListProjects(groupID)
 	if err != nil {
 		return err
 	}
@@ -51,8 +82,8 @@ func (tc *TreeCloner) cloneGroup(groupID int, groupName string, path *pathlib.Pa
 		project := project
 		invalid := project.Archived || project.EmptyRepo
 		if !invalid {
-			tc.ErrGroup.Go(func() error {
-				return tc.GitClient.CloneRepo(project.HTTPURLToRepo, groupPath.Join(project.Name))
+			tc.errGroup.Go(func() error {
+				return tc.gitClient.CloneRepo(project.HTTPURLToRepo, groupPath.Join(project.Name))
 			})
 		}
 	}

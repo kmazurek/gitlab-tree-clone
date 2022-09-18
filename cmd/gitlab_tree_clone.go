@@ -7,7 +7,6 @@ import (
 	"github.com/alexflint/go-arg"
 	"github.com/chigopher/pathlib"
 	"github.com/zakaprov/gitlab-group-clone/internal/app"
-	"github.com/zakaprov/gitlab-group-clone/internal/infra"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -29,22 +28,15 @@ func main() {
 	ctx := context.Background()
 	errGroup, _ := errgroup.WithContext(ctx)
 
-	gc, err := infra.NewGitlabClient(args.Token)
+	treeCloner, err := app.NewTreeCloner(args.Token, errGroup, args.IgnoreIDs, args.IgnoreNames)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	treeClone := app.TreeCloner{
-		ErrGroup:     errGroup,
-		GitClient:    infra.NewGitClient(args.Token),
-		GitlabClient: gc,
-	}
-	err = treeClone.CloneTree(args.RootID, pathlib.NewPath(args.OutputDir))
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
+	errGroup.Go(func() error {
+		return treeCloner.CloneTree(args.RootID, pathlib.NewPath(args.OutputDir))
+	})
 
 	err = errGroup.Wait()
 	if err != nil {
