@@ -29,3 +29,8 @@ Options:
 
 ### Examples
 `gltc --token {API_TOKEN} --ignore-name archived {GROUP_ID}`
+
+## TODO
+- option/command to enable recursively pulling from existing git repos
+- cross-compilation in `Makefile`
+- tests :)
