@@ -22,7 +22,7 @@ func NewGitClient(apiToken string) *GitClient {
 }
 
 func (gc *GitClient) CloneRepo(url string, path *pathlib.Path) error {
-	log.Println("Cloning project: " + path.String())
+	log.Println("Cloning project:", path.String())
 
 	_, err := git.PlainClone(path.String(), false, &git.CloneOptions{
 		URL: url,

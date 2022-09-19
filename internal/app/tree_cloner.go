@@ -4,26 +4,25 @@ import (
 	"log"
 
 	"github.com/chigopher/pathlib"
-	"github.com/kmazurek/gitlab-tree-clone/internal/infra"
+	"github.com/kmazurek/gitlab-tree-clone/internal/domain"
 	"github.com/kmazurek/gitlab-tree-clone/internal/util"
 	"golang.org/x/sync/errgroup"
 )
 
 type TreeCloner struct {
 	errGroup     *errgroup.Group
-	gitClient    *infra.GitClient
-	gitlabClient *infra.GitlabClient
+	gitClient    domain.GitClient
+	gitlabClient domain.GitlabClient
 	ignoreIDs    map[int]bool
 	ignoreNames  map[string]bool
 }
 
-func NewTreeCloner(token string, errGroup *errgroup.Group, ignoreIDs []int, ignoreNames []string) (*TreeCloner, error) {
-	gitClient := infra.NewGitClient(token)
-	gitlabClient, err := infra.NewGitlabClient(token)
-	if err != nil {
-		return nil, err
-	}
-
+func NewTreeCloner(
+	gitClient domain.GitClient,
+	gitlabClient domain.GitlabClient,
+	errGroup *errgroup.Group,
+	ignoreIDs []int,
+	ignoreNames []string) (*TreeCloner, error) {
 	var idMap = make(map[int]bool)
 	for _, id := range ignoreIDs {
 		idMap[id] = true
@@ -51,7 +50,7 @@ func (tc *TreeCloner) CloneTree(groupID int, path *pathlib.Path) error {
 }
 
 func (tc *TreeCloner) cloneGroup(groupID int, groupName string, path *pathlib.Path) error {
-	log.Println("Cloning group: " + groupName + " to path: " + path.String())
+	log.Println("Cloning group:", groupName, "to path:", path.String())
 	groupPath := path.Join(groupName)
 
 	err := groupPath.MkdirAll()
