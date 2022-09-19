@@ -27,6 +27,14 @@ Options:
   --help, -h             display this help and exit
 ```
 
+### Group ID
+The positional argument `GROUP_ID` expects a GitLab group ID to be provided.
+To get the ID of the group you'd like to clone, head over to GitLab and copy it from the group's header (see screenshot below).
+
+![gitlab-group-id](media/images/gitlab-group-id.png)
+
+In the future, group ID usage might be replaced or complemented by referring to HTTP/SSH URLs for the groups.
+
 ### Examples
 `gltc --token {API_TOKEN} --ignore-name archived {GROUP_ID}`
 
